@@ -1,0 +1,22 @@
+{
+    "name": "akido-ld/simple-component",
+    "description": "A simple Library PHP for rendering Coast server",
+    "type": "library",
+    "require-dev": {
+        "phpunit/phpunit": "^12.4"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "AkidoLd\\SimpleComponent\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "AkidoLD",
+            "email": "alexrayan14231423@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
