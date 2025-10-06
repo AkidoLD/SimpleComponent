@@ -15,8 +15,6 @@ The main goal of this project is to **generate HTML code on the server easily, i
 - [ ] Simple and secure HTML generation
 - [ ] Easy-to-use component API
 - [ ] Support for reusable components
-- [ ] Future: template integration (TBD)
-- [ ] Future: basic form handling and validation (TBD)
 
 ## Installation
 
