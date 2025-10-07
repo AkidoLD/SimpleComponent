@@ -1,14 +1,29 @@
 <?php
 
 use AkidoLd\SimpleComponent\Components\Component;
+use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributKeyIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentTagIsInvalidException;
 use PHPUnit\Framework\TestCase;
 
 class ComponentTest extends TestCase{
     private Component $component;
+    
     public function setUp(): void{
         $this->component = new Component('comp');
+    }
+
+    public function testSetClosedMethodWorksCorrectly(){
+        $this->component->setClosed(true);
+        $this->assertTrue($this->component->isClosed());
+        $this->assertFalse($this->component->setClosed(false)->isClosed());
+    }
+
+    public function testIsClosedMethodWorksCorrectly(){
+        $comp = new Component('comp', true);
+        $this->assertTrue($comp->isClosed());
+
+        $this->assertFalse($comp->setClosed(false)->isClosed());
     }
 
     public function testGetAndSetComponentTag(){
@@ -26,6 +41,12 @@ class ComponentTest extends TestCase{
         $this->component->addAttribute('disable');
         $this->assertEquals('12', $this->component->getAttribute('id'));
         $this->assertNull($this->component->getAttribute('disable'));
+    }
+
+    public function testAddAttributeReplacesExistingAttribute(){
+        $this->component->addAttribute('class', 'old');
+        $this->component->addAttribute('class', 'new');
+        $this->assertEquals('new', $this->component->getAttribute('class'));
     }
 
     public function testAddAttributeWithInvalidKeyThrowException(){
@@ -47,11 +68,12 @@ class ComponentTest extends TestCase{
         $this->component->getAttribute('dont_exist');
     }
 
-    public function testSetInexistentAttributeThrowException(){
+    public function testSetInexistentAttributeWithValueThrowException(){
         $this->expectException(ComponentAttributKeyIsInvalidException::class);
         $this->component->setAttribute('invalid', 'invalid_value');
+    }
 
-        //Try without value
+    public function testSetInexistentAttributeWithoutValueThrowException(){
         $this->expectException(ComponentAttributKeyIsInvalidException::class);
         $this->component->setAttribute('invalid');
     }
@@ -64,6 +86,12 @@ class ComponentTest extends TestCase{
         $this->assertEquals('big', $this->component->getAttribute('class'));
     }
 
+    public function testSetAttributeWorksWithNullValue(){
+        $this->component->addAttribute('disabled', null);
+        $this->component->setAttribute('disabled', 'true');
+        $this->assertEquals('true', $this->component->getAttribute('disabled'));
+    }
+
     public function testAttributeExistMethod(){
         $this->component->addAttribute('exist');
         $this->assertTrue($this->component->attributeExists('exist'));
@@ -71,13 +99,73 @@ class ComponentTest extends TestCase{
     }
 
     public function testRemoveAttributeWorksCorrectly(){
-        $this->component->addAttribute('attrib');
+        $this->component->addAttribute('attrib', 'value');
         $this->assertTrue($this->component->attributeExists('attrib'));
 
-        //Try to delete this attribute
-        $this->component->removeAttribute('attrib');
+        $value = $this->component->removeAttribute('attrib');
+        
+        $this->assertEquals('value', $value);
         $this->assertFalse($this->component->attributeExists('attrib'));
     }
 
+    public function testRemoveAttributeWithNullValueWorksCorrectly(){
+        $this->component->addAttribute('disabled');
+        
+        $value = $this->component->removeAttribute('disabled');
+        
+        $this->assertNull($value);
+        $this->assertFalse($this->component->attributeExists('disabled'));
+    }
 
+    public function testRemoveInexistentAttributeThrowException(){
+        $this->expectException(ComponentAttributKeyIsInvalidException::class);
+        $this->component->removeAttribute('inexistent');
+    }
+
+    public function testAddAttributesWorksCorrectly(){
+        $comp = new Component('comp');
+        $comp->addAttributes(['id' => '12', 'class' => 'round']);
+        
+        $this->assertEquals('12', $comp->getAttribute('id'));
+        $this->assertEquals('round', $comp->getAttribute('class'));
+    }
+
+    public function testAddAttributesWithNullValuesWorksCorrectly(){
+        $comp = new Component('comp');
+        $comp->addAttributes(['disabled' => null, 'checked' => null]);
+        
+        $this->assertTrue($comp->attributeExists('disabled'));
+        $this->assertTrue($comp->attributeExists('checked'));
+        $this->assertNull($comp->getAttribute('disabled'));
+        $this->assertNull($comp->getAttribute('checked'));
+    }
+
+    public function testAddAttributesMethodThrowExceptionIfOneOfAllTheElementsWeWantToAddIsNotValid(){
+        $comp = new Component('comp');
+        $this->expectException(ComponentAttributeIsInvalidException::class);
+        $comp->addAttributes([12, 'id' => '12']);
+    }
+
+    public function testAddAttributesMethodDontModifyTheAttributesIfTheAddingFailed(){
+        $comp = new Component('comp');
+        $this->expectException(ComponentAttributeIsInvalidException::class);
+        $comp->addAttributes(["disable" => null, "id" => "12", 12, 'class' => null]);
+        $this->assertFalse($comp->attributeExists('disable'));
+        $this->assertFalse($comp->attributeExists('id'));
+        $this->assertFalse($comp->attributeExists('class'));
+    }
+
+    public function testGetAttributesReturnsAllAttributes(){
+        $this->component->addAttribute('id', '12');
+        $this->component->addAttribute('disabled');
+        $this->component->addAttribute('class', 'big');
+        
+        $expected = ['id' => '12', 'disabled' => null, 'class' => 'big'];
+        $this->assertEquals($expected, $this->component->getAttributes());
+    }
+
+    public function testGetAttributesReturnsEmptyArrayWhenNoAttributes(){
+        $comp = new Component('div');
+        $this->assertEquals([], $comp->getAttributes());
+    }
 }

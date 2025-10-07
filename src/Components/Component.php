@@ -2,6 +2,7 @@
 
 namespace AkidoLd\SimpleComponent\Components;
 
+use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributKeyIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentTagIsInvalidException;
 use Stringable;
@@ -38,14 +39,14 @@ class Component {
      * @var array<Stringable>
      */
     protected array $contents;
-
+    
     /**
      * Indicates whether the component is closed.
-     *
-     * @var bool
-     */
+    *
+    * @var bool
+    */
     protected bool $closed;
-
+    
     public function __construct(string $tag, bool $closed = true){
         $this->setTag($tag);
         $this->closed = $closed;
@@ -55,8 +56,8 @@ class Component {
 
     /**
      * Define the tag of this component.
-     *
-     * @param string $tag The tag to set.
+    *
+    * @param string $tag The tag to set.
      * @throws ComponentTagIsInvalidException If the tag is invalid.
      * @return Component The reference to this component.
      */
@@ -68,9 +69,34 @@ class Component {
         $this->tag = $tag;
         return $this;
     }
-
+    
+    /**
+     * Get the tag of this component
+     * 
+     * @return string
+     */
     public function getTag(): string{
         return $this->tag;
+    }
+    
+    /**
+     * Check if this component is closed
+     * 
+     * @return bool
+     */
+    public function isClosed(): bool{
+        return $this->closed;
+    }
+    
+    /**
+     * Set closed value
+     * 
+     * @param bool $closed
+     * @return self The reference to this component
+     */
+    public function setClosed(bool $closed): self{
+        $this->closed = $closed;
+        return $this;
     }
 
     /**
@@ -94,6 +120,27 @@ class Component {
     }
 
     /**
+     * Add many attribute at time
+     * 
+     * If one element of the attribute you want to add is invalid,
+     * no attribute will be added to this component attributes
+     * 
+     * @param array $attributes The new attributes to add
+     * @throws ComponentAttributeIsInvalidException If an attribute is invalid
+     * @return Component The reference to this component.
+     */
+    public function addAttributes(array $attributes): self {
+        foreach ($attributes as $key => $value) {
+            if (!is_string($key) || ($value !== null && !is_string($value))) {
+                throw new ComponentAttributeIsInvalidException("Invalid attribute: key must be string, value must be string or null");
+            }
+        }
+        
+        $this->attributes = array_merge($this->attributes, $attributes);
+        return $this;
+    }
+
+    /**
      * Remove an attribute from this component.
      *
      * No error occurs when removing a non-existent attribute.
@@ -106,7 +153,7 @@ class Component {
         if($this->attributeExists($key)){
             $value = $this->getAttribute($key);
             unset($this->attributes[$key]);
-            return $key;
+            return $value;
         }
         throw new ComponentAttributKeyIsInvalidException("The attribute with key $key don't exist on this component");
     }
@@ -135,7 +182,7 @@ class Component {
      * @return Component The reference to this component.
      */
     public function setAttribute(string $key, ?string $value = null): self{
-        if (!isset($this->attributes[$key])) {
+        if (!$this->attributeExists($key)) {
             throw new ComponentAttributKeyIsInvalidException("The key '$key' does not exist on this component");
         }
         $this->attributes[$key] = $value;
@@ -161,12 +208,4 @@ class Component {
         return $this->attributes;
     }
 
-    /**
-     * Check if this component is closed
-     * 
-     * @return bool
-     */
-    public function isClosed(): bool{
-        return $this->closed;
-    }
 }
