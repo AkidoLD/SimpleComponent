@@ -99,16 +99,30 @@ class Component {
      * No error occurs when removing a non-existent attribute.
      *
      * @param string $key The key of the attribute to remove.
-     * @return string|null Returns the value of the removed attribute or null otherwise.
+     * @throws ComponentAttributKeyIsInvalidException If the attribute you want to remove don't exist on this component.
+     * @return string|null Returns the value of the removed attribute.
      */
     public function removeAttribute(string $key): ?string{
-        if (($attribute = $this->attributes[$key] ?? null) !== null) {
+        if($this->attributeExists($key)){
+            $value = $this->getAttribute($key);
             unset($this->attributes[$key]);
+            return $key;
         }
-        return $attribute;
+        throw new ComponentAttributKeyIsInvalidException("The attribute with key $key don't exist on this component");
     }
 
+    /**
+     * Get an attribut of this component.
+     * 
+     * @param string $key The key of the attribute we want to get.
+     * 
+     * @throws ComponentAttributKeyIsInvalidException If the attribute does not exist on this component.
+     * @return string|null The attribute value.
+     */
     public function getAttribute(string $key): ?string{
+        if(!$this->attributeExists($key)){
+            throw new ComponentAttributKeyIsInvalidException("The key '$key' does not exist on this component");
+        }
         return $this->attributes[$key] ?? null;
     }
 
@@ -135,7 +149,16 @@ class Component {
      * @return bool
      */
     public function attributeExists(string $key): bool{
-        return $this->getAttribute($key) !== null;
+        return array_key_exists($key, $this->attributes);
+    }
+
+    /**
+     * Get the attributes array of this objet
+     * 
+     * @return array<string, string|null>
+     */
+    public function getAttributes(): array{
+        return $this->attributes;
     }
 
     /**
