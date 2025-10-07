@@ -18,5 +18,8 @@
         }
     ],
     "minimum-stability": "stable",
-    "require": {}
+    "require": {},
+    "scripts": {
+        "test" : "vendor/bin/phpunit --colors=always --bootstrap vendor/autoload.php tests"
+    }
 }
