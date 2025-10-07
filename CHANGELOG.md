@@ -9,3 +9,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - Project initialization
 - Basic repository structure
+- Add `Component` class with basic functionality
+- Add custom `Exceptions` for component class
