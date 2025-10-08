@@ -5,7 +5,6 @@ namespace AkidoLd\SimpleComponent\Components;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributKeyIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentTagIsInvalidException;
-use Stringable;
 
 class Component {
     /**
@@ -34,30 +33,30 @@ class Component {
     /**
      * The content of the component.
      *
-     * It is made up of `Stringable` elements.
+     * This string contains all the content of this `Component`
      *
-     * @var array<Stringable>
+     * @var string
      */
-    protected array $contents;
+    protected string $contents;
     
     /**
      * Indicates whether the component is closed.
-    *
-    * @var bool
-    */
+     *
+     * @var bool
+     */
     protected bool $closed;
     
     public function __construct(string $tag, bool $closed = true){
         $this->setTag($tag);
         $this->closed = $closed;
         $this->attributes = [];
-        $this->contents = [];
+        $this->contents = "";
     }
 
     /**
      * Define the tag of this component.
-    *
-    * @param string $tag The tag to set.
+     *
+     * @param string $tag The tag to set.
      * @throws ComponentTagIsInvalidException If the tag is invalid.
      * @return Component The reference to this component.
      */
@@ -100,6 +99,54 @@ class Component {
     }
 
     /**
+     * Clean an attribute
+     * 
+     * This method removes empty spaces on the key and value of an attribute
+     * 
+     * @param string $key
+     * @param string|null $value
+     * @return void
+     */
+    public static function cleanAttribute(string &$key, ?string &$value): void {
+        $key = trim($key);
+        $value = $value !== null ? trim($value) : null;
+    }
+    
+    /**
+     * Check if an attribute is valid
+     * 
+     * Calls cleanAttribute to normalize the values
+     * 
+     * @param mixed $key The attribute key to check
+     * @param mixed $value The attribute value to check
+     * @throws ComponentAttributKeyIsInvalidException If the attribute key is not a string or empty
+     * @throws ComponentAttributeIsInvalidException If the attribute value is not string, is empty and not null
+     * @return void
+     */
+    public static function checkAttribute(mixed $key, mixed $value): void {
+        if (!is_string($key)) {
+            throw new ComponentAttributKeyIsInvalidException('This attribute key is not a string');
+        }
+    
+        if (!is_string($value) && $value !== null) {
+            throw new ComponentAttributeIsInvalidException('Attribute value must be a string or null');
+        }
+    
+        // Clean the key and value before further processing
+        self::cleanAttribute($key, $value);
+    
+        // Check for empty key
+        if ($key === '') {
+            throw new ComponentAttributKeyIsInvalidException('Attribute key cannot be empty');
+        }
+    
+        // Check for invalid value (empty string is not allowed)
+        if ($value !== null && $value === '') {
+            throw new ComponentAttributeIsInvalidException('Attribute value cannot be an empty string');
+        }
+    }
+
+    /**
      * Add an attribute to this component.
      *
      * An attribute may not have a value. In this case, only the key is stored.
@@ -107,35 +154,34 @@ class Component {
      *
      * @param string $key The attribute key.
      * @param string|null $value The value of this attribute.
-     * @throws ComponentAttributKeyIsInvalidException If the attribute key is invalid.
+     * @throws ComponentAttributKeyIsInvalidException If the attribute key is not a string or empty
+     * @throws ComponentAttributeIsInvalidException If the attribute value is not string, is empty and not null
      * @return Component The reference to this component.
      */
     public function addAttribute(string $key, ?string $value = null): self{
-        $key = trim($key);
-        if (empty($key)) {
-            throw new ComponentAttributKeyIsInvalidException("Attribute key of a Component can't be empty");
-        }
+        self::checkAttribute($key, $value);
         $this->attributes[$key] = $value;
         return $this;
     }
 
     /**
-     * Add many attribute at time
+     * Add many attributes at time
      * 
-     * If one element of the attribute you want to add is invalid,
+     * If one element of the attributes you want to add is invalid,
      * no attribute will be added to this component attributes
      * 
      * @param array $attributes The new attributes to add
-     * @throws ComponentAttributeIsInvalidException If an attribute is invalid
+     * @throws ComponentAttributKeyIsInvalidException If an attribute key is invalid
+     * @throws ComponentAttributeIsInvalidException If an attribute value is invalid
      * @return Component The reference to this component.
      */
     public function addAttributes(array $attributes): self {
+        // Validate all attributes before adding any
         foreach ($attributes as $key => $value) {
-            if (!is_string($key) || ($value !== null && !is_string($value))) {
-                throw new ComponentAttributeIsInvalidException("Invalid attribute: key must be string, value must be string or null");
-            }
+            self::checkAttribute($key, $value);
         }
         
+        // All attributes are valid, merge them
         $this->attributes = array_merge($this->attributes, $attributes);
         return $this;
     }
@@ -146,7 +192,7 @@ class Component {
      * No error occurs when removing a non-existent attribute.
      *
      * @param string $key The key of the attribute to remove.
-     * @throws ComponentAttributKeyIsInvalidException If the attribute you want to remove don't exist on this component.
+     * @throws ComponentAttributKeyIsInvalidException If the attribute you want to remove doesn't exist on this component.
      * @return string|null Returns the value of the removed attribute.
      */
     public function removeAttribute(string $key): ?string{
@@ -155,14 +201,13 @@ class Component {
             unset($this->attributes[$key]);
             return $value;
         }
-        throw new ComponentAttributKeyIsInvalidException("The attribute with key $key don't exist on this component");
+        throw new ComponentAttributKeyIsInvalidException("The attribute with key '$key' doesn't exist on this component");
     }
 
     /**
-     * Get an attribut of this component.
+     * Get an attribute of this component.
      * 
      * @param string $key The key of the attribute we want to get.
-     * 
      * @throws ComponentAttributKeyIsInvalidException If the attribute does not exist on this component.
      * @return string|null The attribute value.
      */
@@ -170,7 +215,7 @@ class Component {
         if(!$this->attributeExists($key)){
             throw new ComponentAttributKeyIsInvalidException("The key '$key' does not exist on this component");
         }
-        return $this->attributes[$key] ?? null;
+        return $this->attributes[$key];
     }
 
     /**
@@ -179,12 +224,15 @@ class Component {
      * @param string $key The attribute key.
      * @param string|null $value The new value to assign.
      * @throws ComponentAttributKeyIsInvalidException If the key does not exist.
+     * @throws ComponentAttributeIsInvalidException If the attribute value is invalid.
      * @return Component The reference to this component.
      */
     public function setAttribute(string $key, ?string $value = null): self{
         if (!$this->attributeExists($key)) {
             throw new ComponentAttributKeyIsInvalidException("The key '$key' does not exist on this component");
         }
+        
+        self::checkAttribute($key, $value);
         $this->attributes[$key] = $value;
         return $this;
     }
@@ -200,7 +248,7 @@ class Component {
     }
 
     /**
-     * Get the attributes array of this objet
+     * Get the attributes array of this object
      * 
      * @return array<string, string|null>
      */
@@ -208,4 +256,66 @@ class Component {
         return $this->attributes;
     }
 
+    /**
+     * Add content to this Component
+     * 
+     * If the content is empty, the content of this component doesn't change
+     * 
+     * @param string $content
+     * @return Component The reference to this Component
+     */
+    public function addContent(string $content): self{
+        $content = trim($content);
+        if($content !== ""){
+            $this->contents .= htmlspecialchars($content, ENT_QUOTES).PHP_EOL;
+        }
+        
+        return $this;
+    }
+
+    /**
+     * Get the contents string of this Component
+     * 
+     * @return string
+     */
+    public function getContents(): string {
+        return $this->contents;
+    }
+
+    /**
+     * Clear all the content of this component
+     * 
+     * @return Component The reference to this Component
+     */
+    public function clearContents(): self{
+        $this->contents = "";
+        return $this;
+    }
+
+    /**
+     * Render the attribute string of this component
+     * 
+     * Note: No validation is performed here because all attributes are validated
+     * when they are added via addAttribute(), addAttributes(), or setAttribute().
+     * Encapsulation guarantees data integrity.
+     * 
+     * @return string
+     */
+    public function renderAttributes(): string {
+        if (empty($this->attributes)) {
+            return "";
+        }
+    
+        $attributes = "";
+    
+        foreach ($this->attributes as $key => $value) {
+            $attributes .= "$key";
+            if ($value !== null) {
+                $attributes .= '="' . htmlspecialchars($value, ENT_QUOTES) . '"';
+            }
+            $attributes .= " ";
+        }
+    
+        return trim($attributes);
+    }
 }
