@@ -282,6 +282,19 @@ class Component {
     }
 
     /**
+     * Add several content at time
+     * 
+     * @param string[] $contents Array of content to add
+     * @return Component The reference to this Component
+     */
+    public function addContents(array $contents): self{
+        foreach($contents as $content){
+            $this->addContent($content);
+        }
+        return $this;
+    }
+
+    /**
      * Get the contents string of this Component
      * 
      * @return string
