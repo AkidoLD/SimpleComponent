@@ -370,4 +370,9 @@ class Component {
         
         return $html;
     }
+
+    //Implementation of Stringable
+    public function __toString(): string{
+        return $this->render();
+    }
 }
