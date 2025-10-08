@@ -140,15 +140,15 @@ class ComponentTest extends TestCase{
         $this->assertNull($comp->getAttribute('checked'));
     }
 
-    public function testAddAttributesMethodThrowExceptionIfOneOfAllTheElementsWeWantToAddIsNotValid(){
+    public function testAddAttributesThrowsExceptionIfAnyElementIsInvalid(){
         $comp = new Component('comp');
-        $this->expectException(ComponentAttributeIsInvalidException::class);
+        $this->expectException(ComponentAttributKeyIsInvalidException::class);
         $comp->addAttributes([12, 'id' => '12']);
     }
 
     public function testAddAttributesMethodDontModifyTheAttributesIfTheAddingFailed(){
         $comp = new Component('comp');
-        $this->expectException(ComponentAttributeIsInvalidException::class);
+        $this->expectException(ComponentAttributKeyIsInvalidException::class);
         $comp->addAttributes(["disable" => null, "id" => "12", 12, 'class' => null]);
         $this->assertFalse($comp->attributeExists('disable'));
         $this->assertFalse($comp->attributeExists('id'));
@@ -167,5 +167,120 @@ class ComponentTest extends TestCase{
     public function testGetAttributesReturnsEmptyArrayWhenNoAttributes(){
         $comp = new Component('div');
         $this->assertEquals([], $comp->getAttributes());
+    }
+
+    public function testCleanAttributeMethodeWorksCorrectly(){
+        $key = "     id   ";
+        $value = "      21   ";
+        Component::cleanAttribute($key, $value);
+        $this->assertEquals('id', $key);
+        $this->assertEquals('21', $value);
+    }
+
+    public function testCleanAttributeWorksOnAttributeWithNoValue(){
+        $key = "  id  ";
+        $value = null;
+        Component::cleanAttribute($key, $value);
+        $this->assertEquals('id', $key);
+        $this->assertNull($value);
+    }
+
+    public function testCheckAttributeThrowIfKeyIsNotString() {
+        $this->expectException(ComponentAttributKeyIsInvalidException::class);
+        Component::checkAttribute(12, null);
+    }
+    
+    public function testCheckAttributeThrowIfKeyIsEmpty() {
+        $this->expectException(ComponentAttributKeyIsInvalidException::class);
+        Component::checkAttribute('', null);
+    }
+    
+    public function testCheckAttributeThrowIfValueIsEmptyString() {
+        $this->expectException(ComponentAttributeIsInvalidException::class);
+        Component::checkAttribute('id', '');
+    }
+    
+    public function testCheckAttributeThrowIfValueIsNotString() {
+        $this->expectException(ComponentAttributeIsInvalidException::class);
+        Component::checkAttribute('id', 12);
+    }
+    
+    
+    public function testRenderAttributeReturnEmptyStringIfNotAttributeSet(){
+        $comp = new Component('comp');
+        $this->assertEquals('',$comp->renderAttributes());
+    }
+
+    public function testRenderAttributeReturnACorrectValue(){
+        $comp = new Component('comp')->addAttributes(['id' => '10', 'class' => 'round', 'disabled' => null]);
+        $expected = 'id="10" class="round" disabled';
+        $this->assertEquals($expected, $comp->renderAttributes());
+    }
+
+    public function testAddContentWorksCorrectly(){
+        $comp = new Component('comp')->addContent('salut');
+        $this->assertEquals('salut'.PHP_EOL, $comp->getContents());
+
+        $comp->addContent('voisin');
+        $this->assertEquals('salut'.PHP_EOL.'voisin'.PHP_EOL, $comp->getContents());
+    
+    }
+
+    public function testAddEmptyContentDontChangeTheContent(){
+        $comp = new Component('comp')->addContent('     ');
+        $this->assertEquals('', $comp->getContents());
+
+    }
+
+    public function testClearContentResetTheContent(){
+        $comp = new Component('comp')->addContent('salut');
+        $this->assertEquals('salut'.PHP_EOL, $comp->getContents());
+        $this->assertEquals('',$comp->clearContents()->getContents());
+    }
+
+    public function testAddContentEscapesHtmlSpecialCharacters(){
+        $comp = new Component('comp')->addContent('<script>alert("XSS")</script>');
+        $expected = '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;'.PHP_EOL;
+        $this->assertEquals($expected, $comp->getContents());
+    }
+    
+    public function testRenderAttributesEscapesHtmlSpecialCharacters(){
+        $comp = new Component('comp')->addAttribute('onclick', 'alert("XSS")');
+        $expected = 'onclick="alert(&quot;XSS&quot;)"';
+        $this->assertEquals($expected, $comp->renderAttributes());
+    }
+    // Test de la mutation sur cleanAttribute (référence &)
+    public function testCleanAttributeModifiesOriginalVariables(){
+        $key = "  id  ";
+        $value = "  value  ";
+        Component::cleanAttribute($key, $value);
+        // Les variables originales doivent être modifiées
+        $this->assertEquals('id', $key);
+        $this->assertEquals('value', $value);
+    }
+
+    // Test checkAttribute avec espaces qui deviennent vides
+    public function testCheckAttributeThrowsIfKeyBecomesEmptyAfterTrim(){
+        $this->expectException(ComponentAttributKeyIsInvalidException::class);
+        Component::checkAttribute('   ', 'value');
+    }
+
+    // Test que addContent avec seulement des espaces ne change rien
+    public function testAddContentWithOnlyWhitespaceDoesNothing(){
+        $comp = new Component('comp');
+        $comp->addContent('   ');
+        $this->assertEquals('', $comp->getContents());
+    }
+
+    // Test du chaînage de méthodes
+    public function testMethodChainingWorks(){
+        $comp = (new Component('div'))
+            ->addAttribute('id', '12')
+            ->addAttribute('class', 'big')
+            ->addContent('Hello');
+        
+        $this->assertEquals('12', $comp->getAttribute('id'));
+        $this->assertEquals('big', $comp->getAttribute('class'));
+        $this->assertStringContainsString('Hello', $comp->getContents());
     }
 }
