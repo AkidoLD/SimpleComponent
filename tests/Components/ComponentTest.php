@@ -219,10 +219,10 @@ class ComponentTest extends TestCase{
 
     public function testAddContentWorksCorrectly(){
         $comp = new Component('comp')->addContent('salut');
-        $this->assertEquals('salut'.PHP_EOL, $comp->getContents());
+        $this->assertEquals('salut', $comp->getContents());
 
         $comp->addContent('voisin');
-        $this->assertEquals('salut'.PHP_EOL.'voisin'.PHP_EOL, $comp->getContents());
+        $this->assertEquals('salut'.PHP_EOL.'voisin', $comp->getContents());
     
     }
 
@@ -234,13 +234,13 @@ class ComponentTest extends TestCase{
 
     public function testClearContentResetTheContent(){
         $comp = new Component('comp')->addContent('salut');
-        $this->assertEquals('salut'.PHP_EOL, $comp->getContents());
+        $this->assertEquals('salut', $comp->getContents());
         $this->assertEquals('',$comp->clearContents()->getContents());
     }
 
     public function testAddContentEscapesHtmlSpecialCharacters(){
         $comp = new Component('comp')->addContent('<script>alert("XSS")</script>');
-        $expected = '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;'.PHP_EOL;
+        $expected = '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;';
         $this->assertEquals($expected, $comp->getContents());
     }
     
@@ -282,5 +282,46 @@ class ComponentTest extends TestCase{
         $this->assertEquals('12', $comp->getAttribute('id'));
         $this->assertEquals('big', $comp->getAttribute('class'));
         $this->assertStringContainsString('Hello', $comp->getContents());
+    }
+
+    public function testRenderAComponentWithoutContentIsOnOneLine(){
+        $comp = new Component('comp');
+        $render = $comp->render();
+        $expected = "<comp></comp>";
+        $this->assertEquals($expected, $render);
+    }
+
+    public function testRenderAComponentWithContentGoToLine(){
+        $comp = new Component('comp')->addContent('component');
+        $expect = "<comp>\ncomponent\n</comp>";
+        $this->assertEquals($expect, $comp->render());
+    }
+
+    public function testRenderAComponentWithAttributeWorksCorrectly(){
+        $comp = new Component('comp')->addAttribute('id', '13');
+        $expect = "<comp id=\"13\"></comp>";
+        $this->assertEquals($expect, $comp->render());
+    }
+
+    public function testRenderAComponentWithClosedIsFalse(){
+        $comp = new Component('comp', false);
+        $expect = "<comp>";
+        $this->assertEquals($expect, $comp->render());
+    }
+    public function testRenderAComponentCompleteComponentWorksCorrectly(){
+        $comp = new Component('comp')
+            ->addAttribute('id', '10')
+            ->addAttribute('class', 'round')
+            ->addContent('Component')
+            ->addContent('hello');
+        $expect = '<comp id="10" class="round">'.PHP_EOL.'Component'.PHP_EOL.'hello'.PHP_EOL.'</comp>';
+        $this->assertEquals($expect,$comp->render());
+    }
+
+    public function testRenderAComponentAutoClosingIgnoresContent(){
+        $comp = new Component('comp', false)
+            ->addContent('This should not appear');
+        $expect = "<comp>";
+        $this->assertEquals($expect, $comp->render());
     }
 }

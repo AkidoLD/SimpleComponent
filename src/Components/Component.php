@@ -255,19 +255,27 @@ class Component {
     public function getAttributes(): array{
         return $this->attributes;
     }
-
+    
     /**
      * Add content to this Component
      * 
-     * If the content is empty, the content of this component doesn't change
+     * Content is trimmed (whitespace removed from start/end).
+     * Each line of content is HTML-escaped and separated by a newline.
+     * The first line has no leading newline, subsequent lines are prefixed with PHP_EOL.
      * 
-     * @param string $content
+     * If the content is empty after trimming, it is not added.
+     * 
+     * @param string $content The content to add
      * @return Component The reference to this Component
      */
     public function addContent(string $content): self{
         $content = trim($content);
         if($content !== ""){
-            $this->contents .= htmlspecialchars($content, ENT_QUOTES).PHP_EOL;
+            // Add newline before content if contents is not empty (not the first line)
+            if($this->contents !== ""){
+                $this->contents .= PHP_EOL;
+            }
+            $this->contents .= htmlspecialchars($content, ENT_QUOTES);
         }
         
         return $this;
@@ -317,5 +325,49 @@ class Component {
         }
     
         return trim($attributes);
+    }
+    
+    /**
+     * Render this component into HTML
+     * 
+     * Returns the complete HTML representation of this component,
+     * with proper formatting (newlines between content lines).
+     * 
+     * Example:
+     * ```php
+     * $comp = new Component('div')
+     *     ->addContent('Line 1')
+     *     ->addContent('Line 2');
+     * echo $comp->render();
+     * ```
+     * 
+     * Output:
+     * ```html
+     * <div>
+     * Line 1
+     * Line 2
+     * </div>
+     * ```
+     * 
+     * @return string The HTML representation of this component
+     */
+    public function render(): string{
+        $html = "<{$this->tag}";
+        
+        $attributes = $this->renderAttributes();
+        if($attributes !== ""){
+            $html .= " $attributes";
+        }
+        $html .= ">";
+        
+        if($this->contents !== "" && $this->isClosed()){
+            $html .= PHP_EOL . $this->contents . PHP_EOL;
+        }
+        
+        if($this->isClosed()){
+            $html .= "</{$this->tag}>";
+        }
+        
+        return $html;
     }
 }
