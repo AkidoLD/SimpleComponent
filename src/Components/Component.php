@@ -48,7 +48,7 @@ class Component {
      */
     protected bool $closed;
     
-    public function __construct(string $tag, bool $closed = true){
+    public function __construct(string $tag = 'comp', bool $closed = true){
         $this->setTag($tag);
         $this->closed = $closed;
         $this->attributes = [];
@@ -175,13 +175,13 @@ class Component {
      * @throws ComponentAttributeIsInvalidException If an attribute value is not a string
      * @return Component The reference to this component.
      */
-    public function addAttributes(array &$attributes): self {
+    public function addAttributes(array $attributes): self {
         $cleaned = [];
         //Check each of the attribute to add
         foreach ($attributes as $key => $value) {
-            $cleanKey = trim($key);
-            self::checkAttribute($cleanKey, $value);
-            $cleaned[$cleanKey] = $value;
+            self::checkAttribute($key, $value);
+            self::cleanAttribute($key, $value);
+            $cleaned[$key] = $value;
         }
 
         //Add the new attributes to the old attribute
@@ -421,15 +421,6 @@ class Component {
     }
     
     /**
-     * Get the class of this Component
-     * 
-     * @return string|null Return the class of this component and null if the class attribute is not set
-     */
-    public function getClass(): ?string{
-        return $this->getAttribute('class');
-    }
-    
-    /**
      * Add a new class to this component
      * 
      * This method contrary to {@see Component::setClass()} doesn't overwrite the previous class.
@@ -445,6 +436,15 @@ class Component {
         $value = ($current === '') ? $class : $current . ' ' . $class;
         $this->setAttribute('class', $value);
         return $this;
+    }
+    
+    /**
+     * Get the class of this Component
+     * 
+     * @return string|null Return the class of this component and null if the class attribute is not set
+     */
+    public function getClass(): ?string{
+        return $this->getAttribute('class');
     }
     
     /**
@@ -508,8 +508,7 @@ class Component {
      * @return Component The reference to this Component
      */
     public function setData(string $name, string $value): self{
-        $name = trim($name);
-        $value = trim($value);
+        self::cleanAttribute($name, $value);
         if($name === "" || $value === ""){
             $empty = ($name === '') ? 'name' : 'value';
             throw new ComponentDataIsInvalidException("A data $empty cannot be empty");
