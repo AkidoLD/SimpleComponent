@@ -118,9 +118,6 @@ class Component {
      * Check if an attribute is valid
      * 
      * Calls cleanAttribute to normalize the values
-     * After this method, the attribut is reading to insert into the attribute array
-     * 
-     * `WARNING` : When you use this method, the original objects are affected by internal modifications.
      * 
      * @param mixed $key The attribute key to check
      * @param mixed $value The attribute value to check
@@ -128,7 +125,7 @@ class Component {
      * @throws ComponentAttributeIsInvalidException If the attribute value is not string, is empty and not null
      * @return void
      */
-    public static function checkAttribute(mixed &$key, mixed &$value): void {
+    public static function checkAttribute(mixed $key, mixed $value): void {
         if (!is_string($key)) {
             throw new ComponentAttributKeyIsInvalidException('This attribute key is not a string');
         }
@@ -178,12 +175,13 @@ class Component {
      * @throws ComponentAttributeIsInvalidException If an attribute value is not a string
      * @return Component The reference to this component.
      */
-    public function addAttributes(array $attributes): self {
+    public function addAttributes(array &$attributes): self {
         $cleaned = [];
         //Check each of the attribute to add
         foreach ($attributes as $key => $value) {
-            self::checkAttribute($key, $value);
-            $cleaned[$key] = $value;
+            $cleanKey = trim($key);
+            self::checkAttribute($cleanKey, $value);
+            $cleaned[$cleanKey] = $value;
         }
 
         //Add the new attributes to the old attribute
