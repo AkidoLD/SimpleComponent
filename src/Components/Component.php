@@ -556,8 +556,7 @@ class Component {
      * @return Component The reference to this Component
      */
     public function setAria(string $name, string $value): self{
-        $name = trim($name);
-        $value = trim($value);
+        self::cleanAttribute($name, $value);
         if($name === "" || $value === ""){
             $empty = ($name === '') ? 'name' : 'value';
             throw new ComponentAriaIsInvalidException("An aria $empty cannot be empty");
