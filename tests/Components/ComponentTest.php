@@ -40,7 +40,7 @@ class ComponentTest extends TestCase{
         $this->component->addAttribute('id', '12');
         $this->component->addAttribute('disable');
         $this->assertEquals('12', $this->component->getAttribute('id'));
-        $this->assertNull($this->component->getAttribute('disable'));
+        $this->assertEquals("",$this->component->getAttribute('disable'));
     }
 
     public function testAddAttributeReplacesExistingAttribute(){
@@ -60,22 +60,27 @@ class ComponentTest extends TestCase{
 
         //Try to get attribute without value
         $this->component->addAttribute('no_value');
-        $this->assertNull($this->component->getAttribute('no_value'));
+        $this->assertEquals("",$this->component->getAttribute('no_value'));
     }
 
-    public function testGetInexistentAttributeThrowException(){
-        $this->expectException(ComponentAttributKeyIsInvalidException::class);
-        $this->component->getAttribute('dont_exist');
+    public function testGetInexistentAttributeReturnNull(){
+        $this->assertNull($this->component->getAttribute('no_exist'));
     }
 
-    public function testSetInexistentAttributeWithValueThrowException(){
-        $this->expectException(ComponentAttributKeyIsInvalidException::class);
-        $this->component->setAttribute('invalid', 'invalid_value');
+    public function testSetInexistentAttributeWithValueAddNewAttribute(){
+        $comp = new Component('comp');
+        $this->assertFalse($comp->attributeExists('id'));
+        $comp->setAttribute('id', '12');
+        $this->assertTrue($comp->attributeExists('id'));
+        $this->assertEquals('12', $comp->getAttribute('id'));
     }
 
-    public function testSetInexistentAttributeWithoutValueThrowException(){
-        $this->expectException(ComponentAttributKeyIsInvalidException::class);
-        $this->component->setAttribute('invalid');
+    public function testSetInexistentAttributeWithoutValueAddNewAttributeWithoutValue(){
+        $comp = new Component('comp');
+        $this->assertFalse($comp->attributeExists('id'));
+        $comp->setAttribute('id');
+        $this->assertTrue($comp->attributeExists('id'));
+        $this->assertEquals('', $comp->getAttribute('id'));
     }
 
     public function testSetExistentAttributeWorks(){
@@ -87,7 +92,7 @@ class ComponentTest extends TestCase{
     }
 
     public function testSetAttributeWorksWithNullValue(){
-        $this->component->addAttribute('disabled', null);
+        $this->component->addAttribute('disabled');
         $this->component->setAttribute('disabled', 'true');
         $this->assertEquals('true', $this->component->getAttribute('disabled'));
     }
@@ -108,18 +113,18 @@ class ComponentTest extends TestCase{
         $this->assertFalse($this->component->attributeExists('attrib'));
     }
 
-    public function testRemoveAttributeWithNullValueWorksCorrectly(){
+    public function testRemoveAttributeWithNoValueWorksCorrectly(){
         $this->component->addAttribute('disabled');
         
         $value = $this->component->removeAttribute('disabled');
         
-        $this->assertNull($value);
+        $this->assertEquals("",$value);
         $this->assertFalse($this->component->attributeExists('disabled'));
     }
 
-    public function testRemoveInexistentAttributeThrowException(){
-        $this->expectException(ComponentAttributKeyIsInvalidException::class);
-        $this->component->removeAttribute('inexistent');
+    public function testRemoveInexistentAttributeReturnNull(){
+        $comp = new Component('comp');
+        $this->assertNull($comp->removeAttribute('inexistent'));
     }
 
     public function testAddAttributesWorksCorrectly(){
@@ -130,14 +135,14 @@ class ComponentTest extends TestCase{
         $this->assertEquals('round', $comp->getAttribute('class'));
     }
 
-    public function testAddAttributesWithNullValuesWorksCorrectly(){
+    public function testAddAttributesWithNoValuesWorksCorrectly(){
         $comp = new Component('comp');
-        $comp->addAttributes(['disabled' => null, 'checked' => null]);
+        $comp->addAttributes(['disabled' => '', 'checked' => '']);
         
         $this->assertTrue($comp->attributeExists('disabled'));
         $this->assertTrue($comp->attributeExists('checked'));
-        $this->assertNull($comp->getAttribute('disabled'));
-        $this->assertNull($comp->getAttribute('checked'));
+        $this->assertEmpty($comp->getAttribute('disabled'));
+        $this->assertEmpty($comp->getAttribute('checked'));
     }
 
     public function testAddAttributesThrowsExceptionIfAnyElementIsInvalid(){
@@ -149,10 +154,20 @@ class ComponentTest extends TestCase{
     public function testAddAttributesMethodDontModifyTheAttributesIfTheAddingFailed(){
         $comp = new Component('comp');
         $this->expectException(ComponentAttributKeyIsInvalidException::class);
-        $comp->addAttributes(["disable" => null, "id" => "12", 12, 'class' => null]);
+        $comp->addAttributes(["disable" => '', "id" => "12", 12, 'class' => '']);
         $this->assertFalse($comp->attributeExists('disable'));
         $this->assertFalse($comp->attributeExists('id'));
         $this->assertFalse($comp->attributeExists('class'));
+    }
+
+    public function testAddAttributesMethodSetCleanKeyAndValue(){
+        $comp = new Component('comp')->addAttributes(['    id' => '   12', '      class   ' => 'round   ', '    disabled' => '       ']);
+        $this->assertTrue($comp->attributeExists('id'));
+        $this->assertTrue($comp->attributeExists('class'));
+        $this->assertTrue($comp->attributeExists('disabled'));
+        $this->assertEquals('12', $comp->getAttribute('id'));
+        $this->assertEquals('round', $comp->getAttribute('class'));
+        $this->assertEquals('', $comp->getAttribute('disabled'));
     }
 
     public function testGetAttributesReturnsAllAttributes(){
@@ -179,30 +194,31 @@ class ComponentTest extends TestCase{
 
     public function testCleanAttributeWorksOnAttributeWithNoValue(){
         $key = "  id  ";
-        $value = null;
+        $value = '   value   ';
         Component::cleanAttribute($key, $value);
         $this->assertEquals('id', $key);
-        $this->assertNull($value);
+        $this->assertEquals("value",$value);
     }
 
     public function testCheckAttributeThrowIfKeyIsNotString() {
         $this->expectException(ComponentAttributKeyIsInvalidException::class);
-        Component::checkAttribute(12, null);
+        $key = 12;
+        $value = '';
+        Component::checkAttribute($key, $value);
     }
     
     public function testCheckAttributeThrowIfKeyIsEmpty() {
+        $key = '';
+        $value = '';
         $this->expectException(ComponentAttributKeyIsInvalidException::class);
-        Component::checkAttribute('', null);
-    }
-    
-    public function testCheckAttributeThrowIfValueIsEmptyString() {
-        $this->expectException(ComponentAttributeIsInvalidException::class);
-        Component::checkAttribute('id', '');
+        Component::checkAttribute($key, $value);
     }
     
     public function testCheckAttributeThrowIfValueIsNotString() {
+        $key = 'id';
+        $value = 12;
         $this->expectException(ComponentAttributeIsInvalidException::class);
-        Component::checkAttribute('id', 12);
+        Component::checkAttribute($key, $value);
     }
     
     
@@ -212,7 +228,7 @@ class ComponentTest extends TestCase{
     }
 
     public function testRenderAttributeReturnACorrectValue(){
-        $comp = new Component('comp')->addAttributes(['id' => '10', 'class' => 'round', 'disabled' => null]);
+        $comp = new Component('comp')->addAttributes(['id' => '10', 'class' => 'round', 'disabled' => '']);
         $expected = 'id="10" class="round" disabled';
         $this->assertEquals($expected, $comp->renderAttributes());
     }
@@ -261,8 +277,10 @@ class ComponentTest extends TestCase{
 
     // Test checkAttribute avec espaces qui deviennent vides
     public function testCheckAttributeThrowsIfKeyBecomesEmptyAfterTrim(){
+        $key = '       ';
+        $value = 'value';
         $this->expectException(ComponentAttributKeyIsInvalidException::class);
-        Component::checkAttribute('   ', 'value');
+        Component::checkAttribute($key, $value);
     }
 
     // Test que addContent avec seulement des espaces ne change rien
