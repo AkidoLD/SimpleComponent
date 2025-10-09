@@ -1,8 +1,10 @@
 <?php
 
 use AkidoLd\SimpleComponent\Components\Component;
+use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAriaIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributKeyIsInvalidException;
+use AkidoLd\SimpleComponent\Exceptions\Component\ComponentDataIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentTagIsInvalidException;
 use PHPUnit\Framework\TestCase;
 
@@ -341,5 +343,207 @@ class ComponentTest extends TestCase{
             ->addContent('This should not appear');
         $expect = "<comp>";
         $this->assertEquals($expect, $comp->render());
+    }
+
+    public function testSetIdAddIdAttribute(){
+        $comp = new Component('comp')->setId('12');
+        $this->assertTrue($comp->attributeExists('id'));
+    }
+
+    public function testSetIdModifyTheAttributValueIfItIsSet(){
+        $comp = new Component('comp')->setId('10');
+        $this->assertEquals('10', $comp->getId());
+        $this->assertEquals('12', $comp->setId('12')->getId());
+    }
+
+    public function testSetIdSetTheCorrectId(){
+        $comp = new Component('comp')->setId('12');
+        $this->assertEquals('12', $comp->getId());
+    }
+
+    public function testGetIdReturnTheCorrectValue(){
+        $comp = new Component('comp')->setId('12');
+        $this->assertEquals('12', $comp->getId());
+    }
+
+    public function testGetIdReturnNullIfIdIsNotSet(){
+        $this->assertNull((new Component('comp')->getId()));
+    }
+
+    public function testSetClassAddClassAttributeIfNotSet(){
+        $comp = new Component();
+        $this->assertFalse($comp->attributeExists('class'));
+        $comp->setClass('round');
+        $this->assertTrue($comp->attributeExists('class'));
+    }
+
+    public function testSetClassOverwriteTheValueOfClassAttribute(){
+        $comp = new Component()->setClass('round');
+        $this->assertEquals('round', $comp->getAttribute('class'));
+        $comp->setClass('square');
+        $this->assertEquals('square', $comp->getAttribute('class'));
+    }
+
+    public function testAddClassSetClassAttributeIfNotSet(){
+        $comp = new Component();
+        $this->assertFalse($comp->attributeExists('class'));
+        $comp->addClass('round');
+        $this->assertTrue($comp->attributeExists('class'));
+    }
+
+    public function testAddClassDontOverwriteThePreviewValue(){
+        $comp = new Component();
+        $comp->addClass('round')->addClass('square');
+        $this->assertEquals('round square', $comp->getAttribute('class'));
+    }
+    public function testGetClassReturnNullIfClassIsNotSet(){
+        $comp = new Component();
+        $this->assertNull($comp->getClass());
+    }
+
+    public function testGetClassReturnTheCorrectClassWhenItIsSet(){
+        $comp = new Component()->addAttribute('class', 'round');
+        $this->assertEquals('round', $comp->getClass());
+    }
+
+    public function testHasClassReturnFalseIfClassIsNotSet(){
+        $this->assertFalse((new Component())->hasClass('round'));
+    }
+
+    public function testHasClassReturnFalseIfTheClassToFoundIsEmpty(){
+        $this->assertFalse((new Component())->hasClass(''));
+    }
+
+    public function testHasClassReturnTrueIfTheClassIsPresentOnClassAttribute(){
+        $comp = new Component()->addClass('round square large');
+        $this->assertTrue($comp->hasClass('square'));
+    }
+
+    public function testRemoveClassCantRemoveClass(){
+        $comp = new Component()->addClass('square round oval');
+        $expect = 'square oval';
+        $this->assertEquals($expect, $comp->removeClass('round')->getClass());
+    }
+
+    public function testRemoveClassRemoveTheClassAttributIfTheClassListIsEmpty(){
+        $comp = new Component()->addClass('round');
+        $this->assertTrue($comp->attributeExists('class'));
+        $comp->removeClass('round');
+        $this->assertFalse($comp->attributeExists('class'));
+    }
+
+    public function testSetDataAddCorrectDataNameAndValue(){
+        $comp = new Component()->setData('name', 'akido');
+        $this->assertTrue($comp->attributeExists('data-name'));
+        $this->assertEquals('akido', $comp->getAttribute('data-name'));
+    }
+    
+    public function testSetDataAddCorrectData(){
+        $comp = new Component()->setData('age', '19');
+        $this->assertTrue($comp->attributeExists('data-age'));
+        $this->assertEquals('19', $comp->getAttribute('data-age'));
+    }
+    
+    public function testSetDataParametersBeforeUseIt(){
+        $comp = new Component()->setData('     name   ', '   akido     ');
+        $this->assertTrue($comp->attributeExists('data-name'));
+        $this->assertEquals('akido', $comp->getAttribute('data-name'));
+    }
+
+    public function testSetDataThrowExceptionIfDataNameIsEmpty(){
+        $this->expectException(ComponentDataIsInvalidException::class);
+        $comp = new Component()->setData('', '12');
+    }
+
+    public function testSetDataThrowExceptionIfValueIsEmpty(){
+        $this->expectException(ComponentDataIsInvalidException::class);
+        $comp = new Component()->setData('uuid', '');
+    }
+
+    public function testGetDataReturnCorrectData(){
+        $comp = new Component()->setData('name', 'akido');
+        $this->assertEquals('akido', $comp->getData('name'));
+    }
+
+    public function testGetDataReturnNullIfDataIsNotFound(){
+        $comp = new Component();
+        $this->assertNull($comp->getData('no_exist'));
+    }
+
+    public function testGetDataReturnNullIfTheDataNameIsEmpty(){
+        $this->assertNull(new Component()->getData(''));
+    }
+
+    public function testRemoveDataWorks(){
+        $comp = new Component()->setData('name', 'alex');
+        $this->assertTrue($comp->attributeExists('data-name'));
+        $comp->removeData('name');
+        $this->assertFalse($comp->attributeExists('data-name'));
+    }
+
+    public function testRemoveDataReturnTheRemovedDataValue(){
+        $comp = new Component()->setData('name', 'alex');
+        $this->assertEquals('alex', $comp->removeData('name'));
+    }
+
+    public function testRemoveDataReturnNullIfTheDataNotSet(){
+        $this->assertNull(new Component()->removeData('inexist'));
+    }
+
+    public function testRemoveDataReturnNullIfDataNameIsEmpty(){
+        $this->assertNull(new Component()->removeData(''));
+    }
+
+    public function testSetAriaWorks(){
+        $comp = new Component()->setAria('langue', 'francaise');
+        $this->assertTrue($comp->attributeExists('aria-langue'));
+        $this->assertEquals('francaise', $comp->getAria('langue'));
+    }
+
+    public function testSetAriaCleanTheParametreBeforeUseIt(){
+        $comp = new Component()->setAria('       stream ', "  true   ");
+        $this->assertTrue($comp->attributeExists('aria-stream'));
+        $this->assertEquals('true', $comp->getAttribute('aria-stream'));
+    }
+
+    public function testSetAriaThrowExceptionWhenAriaNameIsEmpty(){
+        $this->expectException(ComponentAriaIsInvalidException::class);
+        $this->expectExceptionMessage('An aria name cannot be empty');
+        $comp = new Component()->setAria('', 'default');
+    }
+
+    public function testSetAriaThrowExceptionWhenAriaValueIsEmpty(){
+        $this->expectException(ComponentAriaIsInvalidException::class);
+        $this->expectExceptionMessage('An aria value cannot be empty');
+        $comp = new Component()->setAria('name', '');
+    }
+
+    public function testGetAriaWorks(){
+        $comp = new Component()->setAria('langue', 'francais');
+        $this->assertTrue($comp->attributeExists('aria-langue'));
+        $this->assertEquals('francais', $comp->getAria('langue'));
+    }
+
+    public function testGetAriaReturnNullIsAriaNameIsEmpty(){
+        $this->assertNull(new Component()->getAria(''));
+    }
+
+    public function testGetAriaReturnNullIfTheAriaIsNotSet(){
+        $this->assertNull(new Component()->setAria('name', 'alex')->getAria('langue'));
+    }
+
+    public function testRemoveAriaWorks(){
+        $comp = new Component()->setAria('langue', 'fr');
+        $this->assertTrue($comp->attributeExists('aria-langue'));
+        $this->assertEquals('fr', $comp->removeAria('langue'));
+        $this->assertFalse($comp->attributeExists('aria-langue'));
+    }
+
+    public function testRemoveAriaReturnNullIfTheAriaNameIsEmpty(){
+        $this->assertNull(new Component()->setAria('langue', 'fr')->removeAria(''));
+    }
+
+    public function testRemoveAriaReturnNullIfTheAriaNameIsNotFound(){
+        $this->assertNull(new Component()->setAria('langue', 'fr')->removeAria('status'));
     }
 }
