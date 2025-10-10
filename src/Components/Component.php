@@ -4,6 +4,7 @@ namespace AkidoLd\SimpleComponent\Components;
 
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAriaIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeIsInvalidException;
+use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributesArrayIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributKeyIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentDataIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentException;
@@ -176,6 +177,9 @@ class Component {
      * This methode replace the old attribute array by a
      * new valid attributes array
      * 
+     * If the new attributes array is the same instance than
+     * the old, the methode do nothing
+     * 
      * If the new array is not valid, the old attributes 
      * doesn't change and the methode will throw an exception
      * 
@@ -184,13 +188,17 @@ class Component {
      * @return Component The reference to this Component
      */
     public function setAttributes(array $attributes): self{
+        if($this->attributes === $attributes){
+            return $this;
+        }
+        //
         $oldAttributes = $this->getAttributes();
         $this->resetAttributes();
         try{
             $this->addAttributes($attributes);
         }catch(ComponentException $e){
             $this->attributes = $oldAttributes;
-            throw new ComponentException('Failed to set attributes : '.$e->getMessage());
+            throw new ComponentAttributesArrayIsInvalidException('Failed to set attributes : '.$e->getMessage());
         }
         return $this;
     }
@@ -201,9 +209,16 @@ class Component {
      * This method change the old attributes array by a
      * empty array
      * 
+     * If the attribute actuel array is empty, the methode
+     * do nothing
+     * 
      * @return Component
      */
     public function resetAttributes(): self{
+        if(empty($this->attributes)){
+            return $this;
+        }
+        //
         $this->attributes = [];
         return $this;
     }
