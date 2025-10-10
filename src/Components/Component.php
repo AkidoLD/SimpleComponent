@@ -184,7 +184,7 @@ class Component {
      * doesn't change and the methode will throw an exception
      * 
      * @param array $attributes
-     * @throws ComponentException If the new attributes array is not valid
+     * @throws ComponentAttributesArrayIsInvalidException If the new attributes array is not valid
      * @return Component The reference to this Component
      */
     public function setAttributes(array $attributes): self{
