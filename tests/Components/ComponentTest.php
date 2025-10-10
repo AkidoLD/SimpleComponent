@@ -3,6 +3,7 @@
 use AkidoLd\SimpleComponent\Components\Component;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAriaIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeIsInvalidException;
+use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributesArrayIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributKeyIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentDataIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentTagIsInvalidException;
@@ -60,7 +61,7 @@ class ComponentTest extends TestCase{
         $this->component->addAttribute('exist', 'exist');
         $this->assertEquals('exist', $this->component->getAttribute('exist'));
 
-        //Try to get attribute without value
+
         $this->component->addAttribute('no_value');
         $this->assertEquals("",$this->component->getAttribute('no_value'));
     }
@@ -223,7 +224,53 @@ class ComponentTest extends TestCase{
         Component::checkAttribute($key, $value);
     }
     
-    
+    public function testResetAttributesWorks(){
+        $comp = new Component()->addAttribute('id', '12');
+        $this->assertNotEmpty($comp->getAttributes());
+        $this->assertEmpty($comp->resetAttributes()->getAttributes());
+    }
+
+    public function testResetAttributesDoNothingIfTheActuelAttributesIsAlreadyEmpty(){
+        $comp = new Component();
+        $oldAttrib = $comp->getAttributes();
+        $this->assertSame($oldAttrib, $comp->resetAttributes()->getAttributes());
+    }
+
+    public function testSetAttributesWorks(){
+        $comp = new Component()->addAttribute('disabled');
+        $this->assertTrue($comp->attributeExists('disabled'));
+
+        $comp->setAttributes(['id' => '12', 'class' => 'round']);
+        $this->assertFalse($comp->attributeExists('disabled'));
+
+        $this->assertTrue($comp->attributeExists('id'));
+        $this->assertTrue($comp->attributeExists('class'));
+        $this->assertEquals('12', $comp->getAttribute('id'));
+        $this->assertEquals('round', $comp->getAttribute('class'));
+    }
+
+    public function testSetAttributesDoNothingIfItIsTheSameAttributesArray(){
+        $comp = new Component();
+        $old = $comp->getAttributes();
+        $comp->setAttributes($old);
+        $this->assertSame($old, $comp->getAttributes());
+    }
+
+    public function testSetAttributesThrowWhenTheNewArryIsInvalid(){
+        $comp = new Component();
+        $this->expectException(ComponentAttributesArrayIsInvalidException::class);
+        $this->expectExceptionMessage('Failed to set attributes : Attribute value must be a string');
+        $comp->setAttributes(['id' => 12, 'class' => 'round']);
+
+        $this->expectException(ComponentAttributesArrayIsInvalidException::class);
+        $this->expectExceptionMessage('Failed to set attributes : This attribute key is not a string');
+        $comp->setAttributes([10 => '12', 'class' => 'round']);
+
+        $this->expectException(ComponentAttributesArrayIsInvalidException::class);
+        $this->expectExceptionMessage('Failed to set attributes : Attribute key cannot be empty');
+        $comp->setAttributes(['' => '12', 'class' => 'round']);
+    }
+
     public function testRenderAttributeReturnEmptyStringIfNotAttributeSet(){
         $comp = new Component('comp');
         $this->assertEquals('',$comp->renderAttributes());
@@ -267,17 +314,15 @@ class ComponentTest extends TestCase{
         $expected = 'onclick="alert(&quot;XSS&quot;)"';
         $this->assertEquals($expected, $comp->renderAttributes());
     }
-    // Test de la mutation sur cleanAttribute (référence &)
     public function testCleanAttributeModifiesOriginalVariables(){
         $key = "  id  ";
         $value = "  value  ";
         Component::cleanAttribute($key, $value);
-        // Les variables originales doivent être modifiées
+
         $this->assertEquals('id', $key);
         $this->assertEquals('value', $value);
     }
 
-    // Test checkAttribute avec espaces qui deviennent vides
     public function testCheckAttributeThrowsIfKeyBecomesEmptyAfterTrim(){
         $key = '       ';
         $value = 'value';
@@ -285,14 +330,12 @@ class ComponentTest extends TestCase{
         Component::checkAttribute($key, $value);
     }
 
-    // Test que addContent avec seulement des espaces ne change rien
     public function testAddContentWithOnlyWhitespaceDoesNothing(){
         $comp = new Component('comp');
         $comp->addContent('   ');
         $this->assertEquals('', $comp->getContents());
     }
 
-    // Test du chaînage de méthodes
     public function testMethodChainingWorks(){
         $comp = (new Component('div'))
             ->addAttribute('id', '12')
