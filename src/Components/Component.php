@@ -6,6 +6,7 @@ use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAriaIsInvalidException
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributKeyIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentDataIsInvalidException;
+use AkidoLd\SimpleComponent\Exceptions\Component\ComponentException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentTagIsInvalidException;
 
 class Component {
@@ -28,9 +29,19 @@ class Component {
      * ```html
      * <tag key="value"></tag>
      * ```
-     * @var array<string, string|null>
+     * @var array<string, string>
      */
     protected array $attributes;
+
+    /**
+     * Indicates whether the component is closed.
+     *
+     * When this variable is on true, the content
+     * and the close basile will been ignored
+     * 
+     * @var bool
+     */
+    protected bool $closed;
 
     /**
      * The content of the component.
@@ -41,13 +52,13 @@ class Component {
      */
     protected string $contents;
     
-    /**
-     * Indicates whether the component is closed.
-     *
-     * @var bool
-     */
-    protected bool $closed;
     
+    /**
+     * The Constructor of `Component`
+     * 
+     * @param string $tag The tag of the component
+     * @param bool $closed Say if this component closed
+     */
     public function __construct(string $tag = 'comp', bool $closed = true){
         $this->setTag($tag);
         $this->closed = $closed;
@@ -101,6 +112,146 @@ class Component {
     }
 
     /**
+     * Add an attribute to this component.
+     *
+     * An attribute may not have a value. In this case, only the key is stored.
+     * If an attribute with the same key already exists, its value will be replaced.
+     *
+     * @param string $key The attribute key.
+     * @param string|null $value The value of this attribute.
+     * @throws ComponentAttributKeyIsInvalidException If the attribute key is empty
+     * @return Component The reference to this component.
+     */
+    public function addAttribute(string $key, string $value = ''): self{
+        self::checkAttribute($key, $value);
+        $this->attributes[$key] = $value;
+        return $this;
+    }
+
+    /**
+     * Alias of {@see Component::addAttribute()} method
+     * 
+     * @param string $key The attribute key.
+     * @param string $value The new value to assign.
+     * @throws ComponentAttributKeyIsInvalidException If the attribute key is empty
+     * @return Component The reference to this component.
+     */
+    public function setAttribute(string $key, string $value = ""): self{
+        $this->addAttribute($key, $value);
+        return $this;
+    }
+
+    /**
+     * Add many attributes at time
+     * 
+     * If one element of the attributes you want to add is invalid,
+     * no attribute will be added to this component attributes
+     * 
+     * If in the new attributes there is an element with the key of
+     * one of the attributes present, the said attributes will be 
+     * overwritten by the new (check the {@see array_merge()} documentation)
+     * 
+     * @param array $attributes The new attributes to add
+     * @throws ComponentAttributKeyIsInvalidException If an attribute key is not a string or empty
+     * @throws ComponentAttributeIsInvalidException If an attribute value is not a string
+     * @return Component The reference to this component.
+     */
+    public function addAttributes(array $attributes): self {
+        $cleaned = [];
+        //Check each of the attribute to add
+        foreach ($attributes as $key => $value) {
+            self::checkAttribute($key, $value);
+            self::cleanAttribute($key, $value);
+            $cleaned[$key] = $value;
+        }
+
+        //Add the new attributes to the old attribute
+        $this->attributes = array_merge($this->attributes, $cleaned);
+        return $this;
+    }
+    
+    /**
+     * Set all attributes
+     * 
+     * This methode replace the old attribute array by a
+     * new valid attributes array
+     * 
+     * If the new array is not valid, the old attributes 
+     * doesn't change and the methode will throw an exception
+     * 
+     * @param array $attributes
+     * @throws ComponentException If the new attributes array is not valid
+     * @return Component The reference to this Component
+     */
+    public function setAttributes(array $attributes): self{
+        $oldAttributes = $this->getAttributes();
+        $this->resetAttributes();
+        try{
+            $this->addAttributes($attributes);
+        }catch(ComponentException $e){
+            $this->attributes = $oldAttributes;
+            throw new ComponentException('Failed to set attributes : '.$e->getMessage());
+        }
+        return $this;
+    }
+
+    /**
+     * Reset the attributes array
+     * 
+     * This method change the old attributes array by a
+     * empty array
+     * 
+     * @return Component
+     */
+    public function resetAttributes(): self{
+        $this->attributes = [];
+        return $this;
+    }
+    
+    /**
+     * Get an attribute of this component.
+     * 
+     * @param string $key The key of the attribute we want to get.
+     * @return string|null Returns the value of the attribute if it's set and null otherwise.
+     */
+    public function getAttribute(string $key): ?string{
+        return $this->attributes[$key] ?? null;
+    }
+
+    /**
+     * Check if an attribute exists in this component.
+     *
+     * @param string $key The attribute key to check.
+     * @return bool Return `true` if the attribute exist, `false` otherwise
+     */
+    public function attributeExists(string $key): bool{
+        return array_key_exists($key, $this->attributes);
+    }
+
+    /**
+     * Get the attributes array of this object
+     * 
+     * @return array<string, string>
+    */
+    public function getAttributes(): array{
+        return $this->attributes;
+    }
+    
+    /**
+     * Remove an attribute from this component.
+     *
+     * No error occurs when removing a non-existent attribute.
+     *
+     * @param string $key The key of the attribute to remove.
+     * @return string|null Returns the value of the attribut or null if the attribute is not found.
+     */
+    public function removeAttribute(string $key): ?string{
+        $value = $this->getAttribute($key);
+        unset($this->attributes[$key]);
+        return $value;
+    }
+    
+    /**
      * Clean an attribute
      * 
      * This method removes empty spaces on the key and value of an attribute
@@ -143,108 +294,6 @@ class Component {
         }
     }
 
-    /**
-     * Add an attribute to this component.
-     *
-     * An attribute may not have a value. In this case, only the key is stored.
-     * If an attribute with the same key already exists, its value will be replaced.
-     *
-     * @param string $key The attribute key.
-     * @param string|null $value The value of this attribute.
-     * @throws ComponentAttributKeyIsInvalidException If the attribute key is empty
-     * @return Component The reference to this component.
-     */
-    public function addAttribute(string $key, string $value = ''): self{
-        self::checkAttribute($key, $value);
-        $this->attributes[$key] = $value;
-        return $this;
-    }
-
-    /**
-     * Add many attributes at time
-     * 
-     * If one element of the attributes you want to add is invalid,
-     * no attribute will be added to this component attributes
-     * 
-     * If in the new attributes there is an element with the key of
-     * one of the attributes present, the said attributes will be 
-     * overwritten by the new (check the {@see array_merge()} documentation)
-     * 
-     * @param array $attributes The new attributes to add
-     * @throws ComponentAttributKeyIsInvalidException If an attribute key is not a string or empty
-     * @throws ComponentAttributeIsInvalidException If an attribute value is not a string
-     * @return Component The reference to this component.
-     */
-    public function addAttributes(array $attributes): self {
-        $cleaned = [];
-        //Check each of the attribute to add
-        foreach ($attributes as $key => $value) {
-            self::checkAttribute($key, $value);
-            self::cleanAttribute($key, $value);
-            $cleaned[$key] = $value;
-        }
-
-        //Add the new attributes to the old attribute
-        $this->attributes = array_merge($this->attributes, $cleaned);
-        return $this;
-    }
-
-    /**
-     * Remove an attribute from this component.
-     *
-     * No error occurs when removing a non-existent attribute.
-     *
-     * @param string $key The key of the attribute to remove.
-     * @return string|null Returns the value of the attribut or null if the attribute is not found.
-     */
-    public function removeAttribute(string $key): ?string{
-        $value = $this->getAttribute($key);
-        unset($this->attributes[$key]);
-        return $value;
-    }
-
-    /**
-     * Get an attribute of this component.
-     * 
-     * @param string $key The key of the attribute we want to get.
-     * @return string|null Returns the value of the attribute if it's set and null otherwise.
-     */
-    public function getAttribute(string $key): ?string{
-        return $this->attributes[$key] ?? null;
-    }
-
-    /**
-     * Alias of {@see Component::addAttribute()} method
-     * 
-     * @param string $key The attribute key.
-     * @param string $value The new value to assign.
-     * @throws ComponentAttributKeyIsInvalidException If the attribute key is empty
-     * @return Component The reference to this component.
-     */
-    public function setAttribute(string $key, string $value = ""): self{
-        $this->addAttribute($key, $value);
-        return $this;
-    }
-
-    /**
-     * Check if an attribute exists in this component.
-     *
-     * @param string $key The attribute key to check.
-     * @return bool Return `true` if the attribute exist, `false` otherwise
-     */
-    public function attributeExists(string $key): bool{
-        return array_key_exists($key, $this->attributes);
-    }
-
-    /**
-     * Get the attributes array of this object
-     * 
-     * @return array<string, string>
-     */
-    public function getAttributes(): array{
-        return $this->attributes;
-    }
-    
     /**
      * Add content to this Component
      * 
