@@ -287,13 +287,13 @@ class Component {
      * 
      * @param mixed $key The attribute key to check
      * @param mixed $value The attribute value to check
-     * @throws ComponentAttributKeyIsInvalidException If the attribute key is not a string or empty
+     * @throws ComponentAttributeKeyIsInvalidException If the attribute key is not a string or empty
      * @throws ComponentAttributeIsInvalidException If the attribute value is not string, is empty and not null
      * @return void
      */
     public static function checkAttribute(mixed $key, mixed $value): void {
         if (!is_string($key)) {
-            throw new ComponentAttributKeyIsInvalidException('This attribute key is not a string');
+            throw new ComponentAttributKeyIsInvalidException('Attribute key must be a string');
         }
     
         if (!is_string($value)) {
@@ -655,5 +655,26 @@ class Component {
             return null;
         }
         return $this->removeAttribute('aria-'.$name);
+    }
+
+    /**
+     * Get an attribute of this Component
+     * 
+     * @param mixed $key The attribute key
+     * @return string|null The attribute if it's found, null otherwise
+     */
+    public function __get($key): string{
+        return $this->getAttribute($key);
+    }
+
+    /**
+     * Set an attribute of this Component
+     * 
+     * @param mixed $name The attribute key
+     * @param mixed $value The attribute value
+     * @return void
+     */
+    public function __set($key, $value): void{
+        $this->setAttribute($key, $value);
     }
 }
