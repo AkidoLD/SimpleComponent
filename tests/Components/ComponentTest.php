@@ -4,7 +4,7 @@ use AkidoLd\SimpleComponent\Components\Component;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAriaIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributesArrayIsInvalidException;
-use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributKeyIsInvalidException;
+use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeKeyIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentDataIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentTagIsInvalidException;
 use PHPUnit\Framework\TestCase;
@@ -53,7 +53,7 @@ class ComponentTest extends TestCase{
     }
 
     public function testAddAttributeWithInvalidKeyThrowException(){
-        $this->expectException(ComponentAttributKeyIsInvalidException::class);
+        $this->expectException(ComponentAttributeKeyIsInvalidException::class);
         $this->component->addAttribute("     ");
     }
 
@@ -150,13 +150,13 @@ class ComponentTest extends TestCase{
 
     public function testAddAttributesThrowsExceptionIfAnyElementIsInvalid(){
         $comp = new Component('comp');
-        $this->expectException(ComponentAttributKeyIsInvalidException::class);
+        $this->expectException(ComponentAttributeKeyIsInvalidException::class);
         $comp->addAttributes([12, 'id' => '12']);
     }
 
     public function testAddAttributesMethodDontModifyTheAttributesIfTheAddingFailed(){
         $comp = new Component('comp');
-        $this->expectException(ComponentAttributKeyIsInvalidException::class);
+        $this->expectException(ComponentAttributeKeyIsInvalidException::class);
         $comp->addAttributes(["disable" => '', "id" => "12", 12, 'class' => '']);
         $this->assertFalse($comp->attributeExists('disable'));
         $this->assertFalse($comp->attributeExists('id'));
@@ -204,7 +204,7 @@ class ComponentTest extends TestCase{
     }
 
     public function testCheckAttributeThrowIfKeyIsNotString() {
-        $this->expectException(ComponentAttributKeyIsInvalidException::class);
+        $this->expectException(ComponentAttributeKeyIsInvalidException::class);
         $key = 12;
         $value = '';
         Component::checkAttribute($key, $value);
@@ -213,7 +213,7 @@ class ComponentTest extends TestCase{
     public function testCheckAttributeThrowIfKeyIsEmpty() {
         $key = '';
         $value = '';
-        $this->expectException(ComponentAttributKeyIsInvalidException::class);
+        $this->expectException(ComponentAttributeKeyIsInvalidException::class);
         Component::checkAttribute($key, $value);
     }
     
@@ -326,7 +326,7 @@ class ComponentTest extends TestCase{
     public function testCheckAttributeThrowsIfKeyBecomesEmptyAfterTrim(){
         $key = '       ';
         $value = 'value';
-        $this->expectException(ComponentAttributKeyIsInvalidException::class);
+        $this->expectException(ComponentAttributeKeyIsInvalidException::class);
         Component::checkAttribute($key, $value);
     }
 
@@ -589,4 +589,35 @@ class ComponentTest extends TestCase{
     public function testRemoveAriaReturnNullIfTheAriaNameIsNotFound(){
         $this->assertNull(new Component()->setAria('langue', 'fr')->removeAria('status'));
     }
+
+    public function testGetAttributeWithGetMagicMethodWorks(){
+        $comp = new Component()->setAttribute('id', 12);
+        $this->assertEquals('12', $comp->id);
+    }
+
+    public function testGetAttributeWithGetMagicMethodReturnNullIfTheAttributeIsNotFound(){
+        $comp = new Component();
+        $this->assertNull($comp->id);
+    }
+
+    public function testSetAttributeWithSetMagicMethodWorks(){
+        $comp = new Component();
+        $comp->id = '12';
+        $this->assertTrue($comp->attributeExists('id'));
+        $this->assertEquals('12', $comp->getAttribute('id'));
+    }
+
+    public function testSetAttributeWithSetMagicMethodThrowExceptionIfTheKeyIsEmpty(){
+        $comp = new Component();
+        $this->expectException(ComponentAttributeKeyIsInvalidException::class);
+        $this->expectExceptionMessage('Attribute key cannot be empty');
+        $comp->{''} = '12';
+    }
+
+    public function testSetAttributeWithSetMagicMethodThrowExceptionIfTheValueIsNotAString(){
+        $comp = new Component();
+        $this->expectException(ComponentAttributeIsInvalidException::class);
+        $comp->{'class'} = 12;
+    }
+
 }

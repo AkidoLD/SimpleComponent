@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AkidoLd\SimpleComponent\Components;
 
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAriaIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributesArrayIsInvalidException;
-use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributKeyIsInvalidException;
+use AkidoLd\SimpleComponent\Exceptions\Component\ComponentAttributeKeyIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentDataIsInvalidException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentTagIsInvalidException;
+use TypeError;
 
 class Component {
     /**
@@ -120,7 +123,7 @@ class Component {
      *
      * @param string $key The attribute key.
      * @param string|null $value The value of this attribute.
-     * @throws ComponentAttributKeyIsInvalidException If the attribute key is empty
+     * @throws ComponentAttributeKeyIsInvalidException If the attribute key is empty
      * @return Component The reference to this component.
      */
     public function addAttribute(string $key, string $value = ''): self{
@@ -134,7 +137,7 @@ class Component {
      * 
      * @param string $key The attribute key.
      * @param string $value The new value to assign.
-     * @throws ComponentAttributKeyIsInvalidException If the attribute key is empty
+     * @throws ComponentAttributeKeyIsInvalidException If the attribute key is empty
      * @return Component The reference to this component.
      */
     public function setAttribute(string $key, string $value = ""): self{
@@ -153,7 +156,7 @@ class Component {
      * overwritten by the new (check the {@see array_merge()} documentation)
      * 
      * @param array $attributes The new attributes to add
-     * @throws ComponentAttributKeyIsInvalidException If an attribute key is not a string or empty
+     * @throws ComponentAttributeKeyIsInvalidException If an attribute key is not a string or empty
      * @throws ComponentAttributeIsInvalidException If an attribute value is not a string
      * @return Component The reference to this component.
      */
@@ -293,7 +296,7 @@ class Component {
      */
     public static function checkAttribute(mixed $key, mixed $value): void {
         if (!is_string($key)) {
-            throw new ComponentAttributKeyIsInvalidException('Attribute key must be a string');
+            throw new ComponentAttributeKeyIsInvalidException('Attribute key must be a string');
         }
     
         if (!is_string($value)) {
@@ -305,7 +308,7 @@ class Component {
     
         // Check for empty key
         if ($key === '') {
-            throw new ComponentAttributKeyIsInvalidException('Attribute key cannot be empty');
+            throw new ComponentAttributeKeyIsInvalidException('Attribute key cannot be empty');
         }
     }
 
@@ -660,21 +663,27 @@ class Component {
     /**
      * Get an attribute of this Component
      * 
-     * @param mixed $key The attribute key
+     * @param string $key The attribute key
      * @return string|null The attribute if it's found, null otherwise
      */
-    public function __get($key): string{
+    public function __get(string $key): ?string{
         return $this->getAttribute($key);
     }
 
     /**
      * Set an attribute of this Component
      * 
-     * @param mixed $name The attribute key
+     * @param string $name The attribute key
      * @param mixed $value The attribute value
      * @return void
      */
-    public function __set($key, $value): void{
-        $this->setAttribute($key, $value);
+    public function __set(string $name, mixed $value): void {
+        try {
+            $this->setAttribute($name, $value);
+        } catch (TypeError $e) {
+            throw new ComponentAttributeIsInvalidException(
+                "Attribute value must be string or null, " . gettype($value) . " given"
+            );
+        }
     }
 }
