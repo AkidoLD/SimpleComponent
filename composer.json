@@ -20,6 +20,7 @@
     "minimum-stability": "stable",
     "require": {},
     "scripts": {
-        "test" : "vendor/bin/phpunit --colors=always --bootstrap vendor/autoload.php --testdox tests"
+        "test" : "vendor/bin/phpunit --colors=always --bootstrap vendor/autoload.php --testdox",
+        "testall" : "vendor/bin/phpunit --colors=always --bootstrap vendor/autoload.php --testdox tests"
     }
 }
