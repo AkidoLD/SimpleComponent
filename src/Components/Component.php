@@ -331,7 +331,7 @@ class Component {
             if($this->contents !== ""){
                 $this->contents .= PHP_EOL;
             }
-            $this->contents .= htmlspecialchars($content, ENT_QUOTES);
+            $this->contents .= $content;
         }
         
         return $this;
@@ -351,6 +351,20 @@ class Component {
     }
 
     /**
+     * Set the content of a component
+     * 
+     * This method overwrite the previous content
+     * of this component
+     * 
+     * @param string $contents The new content of this Component 
+     * @return self The reference to this Component
+     */
+    public function setContent(string $contents): self{
+        $this->contents = $contents;
+        return $this;
+    }
+
+    /**
      * Get the contents string of this Component
      * 
      * @return string
@@ -358,6 +372,7 @@ class Component {
     public function getContents(): string {
         return $this->contents;
     }
+
 
     /**
      * Clear all the content of this component
