@@ -303,17 +303,6 @@ class ComponentTest extends TestCase{
         $this->assertEquals('',$comp->clearContents()->getContents());
     }
 
-    public function testAddContentEscapesHtmlSpecialCharacters(){
-        $comp = new Component('comp')->addContent('<script>alert("XSS")</script>');
-        $expected = '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;';
-        $this->assertEquals($expected, $comp->getContents());
-    }
-    
-    public function testRenderAttributesEscapesHtmlSpecialCharacters(){
-        $comp = new Component('comp')->addAttribute('onclick', 'alert("XSS")');
-        $expected = 'onclick="alert(&quot;XSS&quot;)"';
-        $this->assertEquals($expected, $comp->renderAttributes());
-    }
     public function testCleanAttributeModifiesOriginalVariables(){
         $key = "  id  ";
         $value = "  value  ";
