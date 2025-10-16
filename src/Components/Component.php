@@ -13,6 +13,53 @@ use AkidoLd\SimpleComponent\Exceptions\Component\ComponentException;
 use AkidoLd\SimpleComponent\Exceptions\Component\ComponentTagIsInvalidException;
 use TypeError;
 
+/**
+ * Component – A generic HTML element representation.
+ *
+ * This class represents an HTML component with all its properties, including:
+ * - **Tag**: the name of the HTML element.
+ * - **Attributes**: such as `id`, `class`, `disabled`, etc.
+ * - **Content**: either plain text or nested components.
+ *
+ * With this class, any HTML component can be represented programmatically.
+ *
+ * Example:
+ * ```php
+ * $button = new Component(tag: "button", closed: true);
+ * $button->setAttribute(key: 'id', value: '01');
+ * $button->addContent(content: 'Click me');
+ * echo $button->render();
+ * ```
+ * Output:
+ * ```html
+ * <button id="01">
+ * Click me
+ * </button>
+ * ```
+ *
+ * ### Parameters
+ * - **tag** — Represents the name of the tag.
+ * - **closed** — Indicates whether the tag is self-closing or not  
+ *   (e.g. `<br>` is not closed, while `<button></button>` is).
+ * - **key** — The attribute key to set.  
+ *   See {@see AkidoLD\SimpleComponent\Components\Component::setAttribute()} for more details.
+ * - **value** — The value of the attribute.
+ * - **content** — The content to add inside the component. It can be another
+ *   `Component` instance or a simple text.
+ * - **render()** — Returns the final HTML string.  
+ *   See {@see AkidoLD\SimpleComponent\Components\Component::render()} for more details.
+ *
+ * ### Security Note
+ * This class is designed to simplify server-side rendering by generating HTML
+ * elements dynamically. However, it does **not** handle XSS protection.  
+ * It is the responsibility of the user to properly sanitize and escape values
+ * passed into the component.
+ *
+ * @package SimpleComponent
+ * @author AkidoLd
+ * @version 1.0
+ */
+
 class Component {
     /**
      * The tag of this component
@@ -133,7 +180,7 @@ class Component {
     }
 
     /**
-     * Alias of {@see Component::addAttribute()} method
+     * Alias of {@see AkidoLD\SimpleComponent\Components\Component::addAttribute()} method
      * 
      * @param string $key The attribute key.
      * @param string $value The new value to assign.
@@ -406,7 +453,7 @@ class Component {
             //
             $attributes .= "$key";
             if ($value !== '') {
-                $attributes .= '="' . htmlspecialchars($value, ENT_QUOTES) . '"';
+                $attributes .= '="' . $value . '"';
             }
         }
         return $attributes;
@@ -505,7 +552,7 @@ class Component {
     /**
      * Add a new class to this component
      * 
-     * This method contrary to {@see Component::setClass()} doesn't overwrite the previous class.
+     * This method contrary to {@see AkidoLD\SimpleComponent\Components\Component::setClass()} doesn't overwrite the previous class.
      * The new class is just added to the previous class
      * 
      * @param string $class The class you want to add
@@ -552,7 +599,7 @@ class Component {
      * Remove a class from this Component
      * 
      * When the remove is done, if the new class string is empty
-     * the class attribute will be removed automatically (useful for {@see Component::renderAttributes()})
+     * the class attribute will be removed automatically (useful for {@see AkidoLD\SimpleComponent\Components\Component::renderAttributes()})
      * 
      * @param string $class The class to remove
      * @return Component The reference to this Component
