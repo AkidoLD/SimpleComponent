@@ -51,15 +51,15 @@ class BemxHelper
      * for the BEMX generation
      *
      * @param string $block The child block name.
-     * @param array $modifiers Modifiers for the child block.
      * @param string|null $parentBlock Optional parent block name.
+     * @param array $modifiers Modifiers for the child block.
      * @param array $parentModifiers Optional parent modifiers.
      * @return string Space-separated BEMX class names.
      */
     public static function generate(
         string $block,
-        array $modifiers = [],
         ?string $parentBlock = null,
+        array $modifiers = [],
         array $parentModifiers = []
     ): string {
         self::validateParameters($parentBlock, $parentModifiers);
