@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
-- Project initialization
-- Basic repository structure
+- Initialize project
+- Setup basic repository structure
 - Add `Component` class with basic functionality
-- Add custom `Exceptions` for component class
-- Add `BemHelper` class for easly generate a correct BEM string
-- Add `BemHelperException` for BemHelper class exception
-- Add `BemxHelper` custom class for BEM string with parent context. See the BemxHelper documentation for more details
-- Add `BemxHelperException` for BemxHelper class exception
+- Add custom `Exceptions` for the `Component` class
+- Add `BemHelper` class to easily generate correct BEM strings
+- Add `BemHelperException` for BemHelper exceptions
+- Add `BemxHelper` class to generate BEM strings with parent context (see BemxHelper documentation for details)
+- Add `BemxHelperException` for BemxHelper exceptions
