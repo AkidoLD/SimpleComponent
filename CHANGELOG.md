@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+## [Release v0.1.1]
+### Update
+- Check Planned Future on the README
+
+## [Release v0.1.0]
 ### Added
 - Initialize project
 - Setup basic repository structure
