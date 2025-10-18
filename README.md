@@ -39,9 +39,9 @@ echo $button;
 
 ## Planned Features
 
-* [ ] Simple and secure HTML generation
-* [ ] Easy-to-use component API
-* [ ] More helpers for BEMX and advanced component composition
+* [X] Simple and secure HTML generation
+* [X] Easy-to-use component API
+* [X] More helpers for BEMX and advanced component composition
 
 ## Installation
 
